@@ -1,0 +1,3 @@
+a simple script to automatically mirror all your github repos.
+
+put it in a cronjob on a server you control, and be happy.
