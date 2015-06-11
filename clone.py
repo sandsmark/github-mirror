@@ -30,45 +30,45 @@ from subprocess import call
 
 USERNAME = 'sandsmark'
 
-def download_repo(url):
-#    print('downloading new repo ', url)
-    call(['git', 'clone', url])
+# directory where you want your preciouses stored
+os.chdir('/srv/http/iskrembilen/git')
 
-def update_repo(name, url):
+def download_repo(name, url, description):
+#    print('downloading new repo ', url)
+    call(['git', 'clone', '--mirror', url])
+    origdir = os.getcwd()
+    os.chdir(origdir + '/' + name)
+    call(['git', 'config', '--local', '--add', 'gitweb.description', description])
+    os.chdir(origdir)
+
+def update_repo(name, url, description):
 #    print('updating repo', name, url)
 
     origdir = os.getcwd()
     os.chdir(origdir + '/' + name)
 
-    if call(['git', 'fetch', '--all']) is not 0:
+    if call(['git', 'fetch', '--force']) is not 0:
         os.chdir(origdir)
         print('unable to fetch', url)
         return
 
-    if call(['git', 'reset', '--hard', 'origin/master']) is not 0:
-        os.chdir(origdir)
-        print('unable to reset', name)
-        return
-
-    if call(['git', 'pull']) is not 0:
-        os.chdir(origdir)
-        print('unable to pull')
-        return
+    call(['git', 'config', '--local', '--unset-all', 'gitweb.description'])
+    call(['git', 'config', '--local', '--add', 'gitweb.description', description])
 
     os.chdir(origdir)
 
-def fetch_url(url):
+def fetch_url(url, description):
 #    print('getting url', url)
-    repo_res = re.search(r'git://github\.com/' + USERNAME + r'/([^\.]+)\.git', url)
+    repo_res = re.search(r'git://github\.com/' + USERNAME + r'/([^\.]+\.git)', url)
     if not repo_res:
         print('unable to parse url:', url)
         return False
 
     repo_name = repo_res.group(1)
     if os.path.isdir(os.getcwd() + '/' + repo_name):
-        update_repo(repo_name, url)
+        update_repo(repo_name, url, description)
     else:
-        download_repo(url)
+        download_repo(repo_name, url, description)
 
 
 url = 'https://api.github.com/users/' + USERNAME + '/repos?per_page=100'
@@ -84,10 +84,9 @@ while url:
     for repo in repos:
         if 'git_url' not in repo:
             print('could not find git_url in repo')
-            fetch_url(repo['git_url'])
             break
 
-        fetch_url(repo['git_url'])
+        fetch_url(repo['git_url'], repo['description'])
 
     # fucking github limits the number of repos on a page...
     link_header = response.getheader('Link')
