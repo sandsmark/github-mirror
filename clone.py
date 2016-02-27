@@ -109,7 +109,6 @@ while url:
         break
     find_url_res = re.search(r'^<([^>]+)>; rel="next"', link_header)
     if find_url_res is None:
-        print("unable to find next url", link_header)
         break
 
     url = find_url_res.group(1)
